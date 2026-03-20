@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCAA D1 Basketball - Today's Games</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <h1>🏀 NCAA D1 Basketball - Today's Games</h1>
+        <p id="dateDisplay"></p>
+    </div>
+
+    <div id="gamesContainer" style="max-width: 900px; margin: 0 auto;">
+        <p id="loadingMessage" style="text-align: center; margin-top: 20px;">Loading today's games...</p>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
