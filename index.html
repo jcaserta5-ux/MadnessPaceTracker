@@ -2,158 +2,139 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NCAA Live Game Tracker</title>
+  <title>NCAA Scoreboard – Today</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #0d1117;
       color: #e6edf3;
       margin: 0;
-      padding: 40px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .card {
-      background: #161b22;
-      padding: 24px 32px;
-      border-radius: 12px;
-      width: 420px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      padding: 20px;
     }
 
     h1 {
-      font-size: 22px;
-      margin-bottom: 10px;
       text-align: center;
+      margin-bottom: 20px;
     }
 
-    .status {
-      text-align: center;
-      font-size: 14px;
-      opacity: 0.8;
-      margin-bottom: 20px;
+    .game {
+      background: #161b22;
+      padding: 16px 20px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
     }
 
     .teams {
       display: grid;
       grid-template-columns: 1fr auto;
-      row-gap: 12px;
+      row-gap: 8px;
       column-gap: 12px;
     }
 
     .team-name {
-      font-size: 18px;
+      font-size: 16px;
     }
 
     .team-score {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: bold;
       text-align: right;
     }
 
     .meta {
-      margin-top: 20px;
-      font-size: 14px;
-      opacity: 0.85;
+      margin-top: 10px;
+      font-size: 13px;
+      opacity: 0.8;
     }
 
     .error {
-      margin-top: 15px;
       color: #ff6b6b;
-      font-size: 13px;
       text-align: center;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <h1>March Madness – Game 230</h1>
-    <div class="status" id="status">Loading…</div>
-
-    <div class="teams">
-      <div class="team-name" id="away-name">Away</div>
-      <div class="team-score" id="away-score">–</div>
-
-      <div class="team-name" id="home-name">Home</div>
-      <div class="team-score" id="home-score">–</div>
-    </div>
-
-    <div class="meta">
-      <div id="clock">Clock: –</div>
-      <div id="period">Period: –</div>
-      <div id="venue">Venue: –</div>
-    </div>
-
-    <div class="error" id="error"></div>
-  </div>
+  <h1>NCAA Division I – Today’s Games</h1>
+  <div id="games"></div>
+  <div id="error" class="error"></div>
 
   <script>
-    // NCAA GAME JSON (you can update the date if needed)
-    const GAME_URL =
-      "https://data.ncaa.com/casablanca/game/basketball-men/d1/2025/03/21/230/gamecenter.json";
+    function formatDateForNCAA() {
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${yyyy}/${mm}/${dd}`;
+    }
 
-    // Your Cloudflare proxy
-    const PROXY =
-      "https://madnesspacetracker.pages.dev/proxy?url=" +
-      encodeURIComponent(GAME_URL);
+    async function loadGames() {
+      const datePath = formatDateForNCAA();
 
-    const els = {
-      status: document.getElementById("status"),
-      awayName: document.getElementById("away-name"),
-      homeName: document.getElementById("home-name"),
-      awayScore: document.getElementById("away-score"),
-      homeScore: document.getElementById("home-score"),
-      clock: document.getElementById("clock"),
-      period: document.getElementById("period"),
-      venue: document.getElementById("venue"),
-      error: document.getElementById("error"),
-    };
+      const NCAA_URL =
+        `https://data.ncaa.com/casablanca/scoreboard/basketball-men/d1/${datePath}/scoreboard.json`;
 
-    async function fetchGame() {
+      const PROXY =
+        "https://madnesspacetracker.pages.dev/proxy?url=" +
+        encodeURIComponent(NCAA_URL);
+
+      const gamesDiv = document.getElementById("games");
+      const errorDiv = document.getElementById("error");
+
       try {
-        els.error.textContent = "";
+        errorDiv.textContent = "";
+        gamesDiv.innerHTML = "Loading…";
 
         const res = await fetch(PROXY, { cache: "no-store" });
         if (!res.ok) throw new Error("HTTP " + res.status);
 
         const data = await res.json();
-        const game = data.game || data;
+        const games = data.games || [];
 
-        const home = game.home || {};
-        const away = game.away || {};
+        if (games.length === 0) {
+          gamesDiv.innerHTML = "<p>No games today.</p>";
+          return;
+        }
 
-        els.awayName.textContent =
-          away.names?.short || away.names?.full || "Away";
-        els.homeName.textContent =
-          home.names?.short || home.names?.full || "Home";
+        gamesDiv.innerHTML = "";
 
-        els.awayScore.textContent = away.score ?? "0";
-        els.homeScore.textContent = home.score ?? "0";
+        games.forEach(g => {
+          const home = g.home || {};
+          const away = g.away || {};
 
-        els.status.textContent =
-          game.gameStateText ||
-          game.status ||
-          (game.gameState === "final" ? "Final" : "Live");
+          const div = document.createElement("div");
+          div.className = "game";
 
-        els.clock.textContent = "Clock: " + (game.gameClock || "—");
-        els.period.textContent = "Period: " + (game.currentPeriod || "—");
+          div.innerHTML = `
+            <div class="teams">
+              <div class="team-name">${away.names?.short || away.team || "Away"}</div>
+              <div class="team-score">${away.score ?? "0"}</div>
 
-        const venue =
-          game.venue ||
-          (game.site ? `${game.site.city}, ${game.site.state}` : "TBD");
+              <div class="team-name">${home.names?.short || home.team || "Home"}</div>
+              <div class="team-score">${home.score ?? "0"}</div>
+            </div>
 
-        els.venue.textContent = "Venue: " + venue;
+            <div class="meta">
+              Status: ${g.gameState || g.status || "TBD"}<br>
+              Clock: ${g.gameClock || "—"}<br>
+              Period: ${g.currentPeriod || "—"}<br>
+              Venue: ${g.venue || "TBD"}
+            </div>
+          `;
+
+          gamesDiv.appendChild(div);
+        });
+
       } catch (err) {
-        els.error.textContent = "Error loading game data.";
-        els.status.textContent = "Error";
         console.error(err);
+        errorDiv.textContent = "Error loading scoreboard.";
       }
     }
 
-    fetchGame();
-    setInterval(fetchGame, 10000);
+    loadGames();
+    setInterval(loadGames, 15000);
   </script>
 
 </body>
