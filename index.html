@@ -1,417 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Madness Pace Tracker</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 15px;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            color: white;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            font-size: 1.8em;
-            margin-bottom: 5px;
-        }
-
-        .game {
-            background: white;
-            padding: 15px;
-            margin: 10px 0;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            cursor: pointer;
-        }
-
-        .game:active {
-            transform: scale(0.98);
-        }
-
-        .teams {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            margin: 10px 0;
-        }
-
-        .team {
-            text-align: center;
-            flex: 1;
-        }
-
-        .team-name {
-            font-weight: bold;
-            font-size: 0.9em;
-            word-wrap: break-word;
-        }
-
-        .score {
-            font-size: 2em;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .total {
-            background: #f0f0f0;
-            padding: 8px;
-            border-radius: 5px;
-            text-align: center;
-            margin: 10px 0;
-            font-weight: bold;
-        }
-
-        .status {
-            text-align: center;
-            font-size: 0.85em;
-            padding: 5px 10px;
-            background: #ffa502;
-            color: white;
-            border-radius: 5px;
-            display: inline-block;
-            margin-top: 10px;
-            width: 100%;
-        }
-
-        .status.live {
-            background: #ff4757;
-            animation: pulse 1s infinite;
-        }
-
-        .status.final {
-            background: #2ed573;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-        }
-
-        .modal-content {
-            background: white;
-            margin: 30% auto;
-            padding: 20px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .close {
-            float: right;
-            font-size: 24px;
-            cursor: pointer;
-            color: #999;
-        }
-
-        .close:hover {
-            color: #000;
-        }
-
-        input {
-            width: 100%;
-            padding: 8px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        button:hover {
-            background: #5568d3;
-        }
-
-        .ou-info {
-            background: #f9f9f9;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .trend {
-            font-size: 1.2em;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-
-        .over {
-            color: #2ed573;
-        }
-
-        .under {
-            color: #ff4757;
-        }
-
-        .loading {
-            text-align: center;
-            color: white;
-            padding: 40px;
-        }
-
-        .spinner {
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            text-align: center;
-            color: white;
-            padding: 40px;
-        }
-    </style>
+  <title>NCAA D1 Basketball Scores</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+    h1 { margin-bottom: 20px; }
+    .game {
+      background: white;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .teams { font-size: 18px; font-weight: bold; }
+    .meta { color: #555; margin-top: 4px; }
+    .score { font-size: 20px; margin-top: 6px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🏀 Madness Pace Tracker</h1>
-            <p style="color: white;">NCAA D1 Basketball - LIVE GAMES ONLY</p>
-        </header>
 
-        <div id="content">
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>Loading live games from NCAA API...</p>
-            </div>
-        </div>
+<h1>Live NCAA D1 Basketball Scores</h1>
+<div id="scores">Loading…</div>
 
-        <div id="gameModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2 id="modalTitle"></h2>
-                <div id="modalScores"></div>
-                <div class="total" id="modalTotal"></div>
-                <div class="ou-info">
-                    <label><strong>Set O/U Line:</strong></label><br>
-                    <input type="number" id="ouInput" placeholder="Enter total" step="0.5">
-                    <button onclick="setOU()">Set Line</button>
-                    <div class="trend" id="trendDisplay"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+<script>
+async function loadScores() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
 
-    <script>
-        let games = [];
-        let currentGame = null;
-        let ouData = {};
+    const url = `https://data.ncaa.com/casablanca/scoreboard/basketball-men/d1/${yyyy}/${mm}/${dd}/scoreboard.json`;
 
-        document.querySelector('.close').onclick = () => {
-            document.getElementById('gameModal').style.display = 'none';
-        };
+    try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Bad response");
+        const data = await res.json();
 
-        window.onclick = (event) => {
-            const modal = document.getElementById('gameModal');
-            if (event.target == modal) {
-                modal.style.display = 'none';
-            }
-        };
+        const container = document.getElementById("scores");
+        container.innerHTML = "";
 
-        async function fetchLiveGames() {
-            try {
-                const today = new Date();
-                const year = today.getFullYear();
-                const month = String(today.getMonth() + 1).padStart(2, '0');
-                const day = String(today.getDate()).padStart(2, '0');
-
-                // Using henrygd NCAA API - correct endpoint
-                const url = `https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${year}/${month}/${day}`;
-                
-                console.log('Fetching from:', url);
-                
-                const response = await fetch(url);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-                console.log('API Response:', data);
-                
-                games = data.games || [];
-
-                if (games.length === 0) {
-                    document.getElementById('content').innerHTML = `
-                        <div class="error">
-                            <p>No games scheduled for today (${year}-${month}-${day})</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                displayGames();
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('content').innerHTML = `
-                    <div class="error">
-                        <p>⚠️ Unable to load games</p>
-                        <p style="font-size: 0.9em; margin-top: 10px;">${error.message}</p>
-                        <button onclick="location.reload()" style="margin-top: 20px;">Retry</button>
-                    </div>
-                `;
-            }
+        if (!data.games || data.games.length === 0) {
+            container.innerHTML = "<p>No games today.</p>";
+            return;
         }
 
-        function displayGames() {
-            if (games.length === 0) {
-                document.getElementById('content').innerHTML = '<p style="color: white; text-align: center;">No games found</p>';
-                return;
-            }
+        data.games.forEach(g => {
+            const div = document.createElement("div");
+            div.className = "game";
 
-            let html = '';
-            games.forEach((game, idx) => {
-                const awayScore = game.away_score || 0;
-                const homeScore = game.home_score || 0;
-                const total = awayScore + homeScore;
-                
-                let status = 'Scheduled';
-                let statusClass = '';
+            const home = g.home.names.short;
+            const away = g.away.names.short;
 
-                const gameStatus = (game.status || '').toLowerCase();
-                if (gameStatus.includes('final')) {
-                    status = 'Final';
-                    statusClass = 'final';
-                } else if (gameStatus.includes('progress') || gameStatus.includes('live') || gameStatus.includes('in progress')) {
-                    status = '🔴 LIVE';
-                    statusClass = 'live';
-                }
+            const homeScore = g.home.score || "-";
+            const awayScore = g.away.score || "-";
 
-                html += `
-                    <div class="game" onclick="openGame(${idx})">
-                        <div class="teams">
-                            <div class="team">
-                                <div class="team-name">${game.away_display}</div>
-                                <div class="score">${awayScore}</div>
-                            </div>
-                            <div style="color: #999;">vs</div>
-                            <div class="team">
-                                <div class="team-name">${game.home_display}</div>
-                                <div class="score">${homeScore}</div>
-                            </div>
-                        </div>
-                        <div class="total">Total: ${total}</div>
-                        <div class="status ${statusClass}">${status}</div>
-                    </div>
-                `;
-            });
+            const status = g.gameState || "TBD";
+            const time = g.startTime || "";
 
-            document.getElementById('content').innerHTML = html;
-        }
-
-        function openGame(idx) {
-            currentGame = games[idx];
-            const awayScore = currentGame.away_score || 0;
-            const homeScore = currentGame.home_score || 0;
-            const total = awayScore + homeScore;
-            const gameId = currentGame.id;
-
-            document.getElementById('modalTitle').textContent = 
-                `${currentGame.away_display} vs ${currentGame.home_display}`;
-            
-            document.getElementById('modalScores').innerHTML = `
-                <div class="teams">
-                    <div class="team">
-                        <div class="team-name">${currentGame.away_display}</div>
-                        <div class="score">${awayScore}</div>
-                    </div>
-                    <div style="color: #999;">vs</div>
-                    <div class="team">
-                        <div class="team-name">${currentGame.home_display}</div>
-                        <div class="score">${homeScore}</div>
-                    </div>
-                </div>
+            div.innerHTML = `
+                <div class="teams">${away} @ ${home}</div>
+                <div class="score">${awayScore} - ${homeScore}</div>
+                <div class="meta">${status} • ${time}</div>
             `;
 
-            document.getElementById('modalTotal').textContent = `Total: ${total}`;
-
-            if (ouData[gameId]) {
-                const ou = ouData[gameId];
-                const trend = total > ou ? 'OVER 📈' : total < ou ? 'UNDER 📉' : 'EVEN';
-                const trendClass = total > ou ? 'over' : total < ou ? 'under' : '';
-                document.getElementById('trendDisplay').innerHTML = `
-                    <div class="trend ${trendClass}">O/U: ${ou} - ${trend}</div>
-                `;
-            } else {
-                document.getElementById('trendDisplay').innerHTML = '';
-            }
-
-            document.getElementById('gameModal').style.display = 'block';
-        }
-
-        function setOU() {
-            const ou = parseFloat(document.getElementById('ouInput').value);
-            if (!ou || isNaN(ou)) {
-                alert('Enter a valid number');
-                return;
-            }
-
-            ouData[currentGame.id] = ou;
-            document.getElementById('ouInput').value = '';
-
-            const total = (currentGame.away_score || 0) + (currentGame.home_score || 0);
-            const trend = total > ou ? 'OVER 📈' : 'UNDER 📉';
-            const trendClass = total > ou ? 'over' : 'under';
-            
-            document.getElementById('trendDisplay').innerHTML = `
-                <div class="trend ${trendClass}">O/U: ${ou} - ${trend}</div>
-            `;
-        }
-
-        window.addEventListener('load', () => {
-            fetchLiveGames();
-            setInterval(fetchLiveGames, 10000);
+            container.appendChild(div);
         });
-    </script>
+
+    } catch (err) {
+        document.getElementById("scores").innerHTML =
+            "<p>Error loading NCAA data.</p>";
+        console.error(err);
+    }
+}
+
+// Load immediately + refresh every 30 seconds
+loadScores();
+setInterval(loadScores, 30000);
+</script>
+
 </body>
 </html>
