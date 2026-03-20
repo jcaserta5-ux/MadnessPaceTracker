@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NCAA Tournament – Live Scoreboard</title>
+  <title>NCAA Division I – Live Scoreboard</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -57,20 +57,18 @@
 </head>
 <body>
 
-  <h1>NCAA Tournament – Games</h1>
+  <h1>NCAA Division I – Today’s Games</h1>
   <div id="games"></div>
   <div id="error" class="error"></div>
 
   <script>
     async function loadGames() {
-
-      // HARD-CODED TO THE DATE YOU SHOWED IN YOUR JSON
-      const NCAA_URL =
-        "https://data.ncaa.com/casablanca/scoreboard/basketball-men/d1/2026/03/19/scoreboard.json";
+      const ESPN_URL =
+        "https://site.web.api.espn.com/apis/v2/sports/basketball/mens-college-basketball/scoreboard";
 
       const PROXY =
         "https://madnesspacetracker.pages.dev/proxy?url=" +
-        encodeURIComponent(NCAA_URL);
+        encodeURIComponent(ESPN_URL);
 
       const gamesDiv = document.getElementById("games");
       const errorDiv = document.getElementById("error");
@@ -80,45 +78,46 @@
         gamesDiv.innerHTML = "Loading…";
 
         const res = await fetch(PROXY, { cache: "no-store" });
-
         if (!res.ok) throw new Error("HTTP " + res.status);
 
         const data = await res.json();
+        const events = data.events || [];
 
-        // FIX: NCAA tournament JSON wraps each game inside { game: {...} }
-        const rawGames = data.games || [];
-        const games = rawGames.map(g => g.game);
-
-        if (games.length === 0) {
-          gamesDiv.innerHTML = "<p>No games found.</p>";
+        if (events.length === 0) {
+          gamesDiv.innerHTML = "<p>No games scheduled today.</p>";
           return;
         }
 
         gamesDiv.innerHTML = "";
 
-        games.forEach(g => {
-          const home = g.home || {};
-          const away = g.away || {};
+        events.forEach(ev => {
+          const competition = ev.competitions?.[0] || {};
+          const competitors = competition.competitors || [];
+
+          const home = competitors.find(t => t.homeAway === "home") || {};
+          const away = competitors.find(t => t.homeAway === "away") || {};
+
+          const homeTeam = home.team || {};
+          const awayTeam = away.team || {};
 
           const div = document.createElement("div");
           div.className = "game";
 
           div.innerHTML = `
             <div class="teams">
-              <div class="team-name">${away.names?.short || "Away"}</div>
+              <div class="team-name">${awayTeam.shortDisplayName || "Away"}</div>
               <div class="team-score">${away.score ?? "0"}</div>
 
-              <div class="team-name">${home.names?.short || "Home"}</div>
+              <div class="team-name">${homeTeam.shortDisplayName || "Home"}</div>
               <div class="team-score">${home.score ?? "0"}</div>
             </div>
 
             <div class="meta">
-              Status: ${g.gameState || "TBD"}<br>
-              Clock: ${g.contestClock || "—"}<br>
-              Period: ${g.currentPeriod || "—"}<br>
-              Network: ${g.network || "—"}<br>
-              Round: ${g.bracketRound || "—"}<br>
-              Start Time: ${g.startTime || "—"}
+              Status: ${ev.status?.type?.shortDetail || "TBD"}<br>
+              Clock: ${ev.status?.type?.state === "in" ? ev.status?.displayClock : "—"}<br>
+              Period: ${ev.status?.period || "—"}<br>
+              Start Time: ${new Date(ev.date).toLocaleTimeString([], {hour: "numeric", minute: "2-digit"})}<br>
+              Network: ${competition.broadcasts?.[0]?.names?.[0] || "—"}
             </div>
           `;
 
