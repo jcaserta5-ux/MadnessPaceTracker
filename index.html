@@ -1,72 +1,165 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>NCAA D1 Basketball Scores</title>
+  <meta charset="UTF-8" />
+  <title>NCAA Game 230 Live</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
-    h1 { margin-bottom: 20px; }
-    .game {
-      background: white;
-      padding: 12px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0b1020;
+      color: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
     }
-    .teams { font-size: 18px; font-weight: bold; }
-    .score { font-size: 20px; margin-top: 6px; }
-    .meta { color: #555; margin-top: 4px; }
+    .card {
+      background: #151a30;
+      border-radius: 12px;
+      padding: 24px 28px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+      min-width: 320px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+    .header h1 {
+      font-size: 18px;
+      margin: 0;
+    }
+    .status {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+    .teams {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      row-gap: 8px;
+      column-gap: 12px;
+      margin-top: 8px;
+    }
+    .team-name {
+      font-size: 16px;
+    }
+    .team-score {
+      font-size: 20px;
+      font-weight: 600;
+      text-align: right;
+    }
+    .meta {
+      margin-top: 12px;
+      font-size: 13px;
+      opacity: 0.85;
+    }
+    .error {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #ff6b6b;
+    }
   </style>
 </head>
 <body>
+  <div class="card">
+    <div class="header">
+      <h1>March Madness – Game 230</h1>
+      <div class="status" id="status">Loading…</div>
+    </div>
 
-<h1>Live NCAA D1 Basketball Scores</h1>
-<div id="scores">Loading…</div>
+    <div class="teams">
+      <div class="team-name" id="away-name">Away</div>
+      <div class="team-score" id="away-score">–</div>
 
-<script>
-async function loadScores() {
-    const url = "https://site.web.api.espn.com/apis/v2/sports/basketball/mens-college-basketball/scoreboard";
+      <div class="team-name" id="home-name">Home</div>
+      <div class="team-score" id="home-score">–</div>
+    </div>
 
-    try {
-        const res = await fetch(url);
-        const data = await res.json();
+    <div class="meta">
+      <div id="clock">Clock: –</div>
+      <div id="period">Period: –</div>
+      <div id="venue">Venue: –</div>
+    </div>
 
-        const container = document.getElementById("scores");
-        container.innerHTML = "";
+    <div class="error" id="error"></div>
+  </div>
 
-        const events = data.events || [];
+  <script>
+    // You may need to adjust the date portion of this path.
+    // Inspect the NCAA game page Network tab for "gamecenter.json" under data.ncaa.com.
+    const GAME_BASE_URL =
+      "https://data.ncaa.com/casablanca/game/basketball-men/d1/2025/03/21/230";
+    const GAMECENTER_URL = `${GAME_BASE_URL}/gamecenter.json`;
 
-        if (events.length === 0) {
-            container.innerHTML = "<p>No games today.</p>";
-            return;
+    const els = {
+      status: document.getElementById("status"),
+      awayName: document.getElementById("away-name"),
+      homeName: document.getElementById("home-name"),
+      awayScore: document.getElementById("away-score"),
+      homeScore: document.getElementById("home-score"),
+      clock: document.getElementById("clock"),
+      period: document.getElementById("period"),
+      venue: document.getElementById("venue"),
+      error: document.getElementById("error"),
+    };
+
+    async function fetchGame() {
+      try {
+        els.error.textContent = "";
+        const res = await fetch(GAMECENTER_URL, { cache: "no-store" });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
         }
 
-        events.forEach(ev => {
-            const comp = ev.competitions[0];
-            const home = comp.competitors.find(t => t.homeAway === "home");
-            const away = comp.competitors.find(t => t.homeAway === "away");
+        const data = await res.json();
+        // Structure can vary slightly; this is a common pattern.
+        const game = data.game || data;
 
-            const div = document.createElement("div");
-            div.className = "game";
+        const home = game.home || {};
+        const away = game.away || {};
 
-            div.innerHTML = `
-                <div class="teams">${away.team.shortDisplayName} @ ${home.team.shortDisplayName}</div>
-                <div class="score">${away.score} - ${home.score}</div>
-                <div class="meta">${ev.status.type.description}</div>
-            `;
+        els.awayName.textContent = away.names?.short || away.names?.full || away.teamName || "Away";
+        els.homeName.textContent = home.names?.short || home.names?.full || home.teamName || "Home";
 
-            container.appendChild(div);
-        });
+        els.awayScore.textContent = away.score ?? away.currentScore ?? "0";
+        els.homeScore.textContent = home.score ?? home.currentScore ?? "0";
 
-    } catch (err) {
-        document.getElementById("scores").innerHTML =
-            "<p>Error loading ESPN data.</p>";
+        const statusText =
+          game.gameStateText ||
+          game.status ||
+          (game.gameState === "final" ? "Final" : game.gameState || "Live");
+
+        els.status.textContent = statusText;
+
+        const clock =
+          game.gameClock || game.clock || (game.gameState === "final" ? "Final" : "—");
+        const period =
+          game.currentPeriod || game.period || game.gamePeriod || "—";
+
+        els.clock.textContent = `Clock: ${clock}`;
+        els.period.textContent = `Period: ${period}`;
+
+        const venueParts = [];
+        if (game.venue) venueParts.push(game.venue);
+        if (game.location) venueParts.push(game.location);
+        if (venueParts.length === 0 && game.site && game.site.city) {
+          venueParts.push(game.site.city, game.site.state);
+        }
+        els.venue.textContent = `Venue: ${venueParts.filter(Boolean).join(", ") || "TBD"}`;
+      } catch (err) {
         console.error(err);
+        els.error.textContent =
+          "Error loading game data. If this persists, confirm the JSON URL or use a proxy for CORS.";
+        els.status.textContent = "Error";
+      }
     }
-}
 
-loadScores();
-setInterval(loadScores, 30000);
-</script>
-
+    // Initial load + poll every 10 seconds
+    fetchGame();
+    setInterval(fetchGame, 10000);
+  </script>
 </body>
 </html>
