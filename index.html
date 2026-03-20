@@ -222,7 +222,7 @@
         <div id="content">
             <div class="loading">
                 <div class="spinner"></div>
-                <p>Loading live games...</p>
+                <p>Loading live games from NCAA API...</p>
             </div>
         </div>
 
@@ -260,19 +260,26 @@
 
         async function fetchLiveGames() {
             try {
-                const response = await fetch('https://www.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard');
+                const today = new Date();
+                const year = today.getFullYear();
+                const month = String(today.getMonth() + 1).padStart(2, '0');
+                const day = String(today.getDate()).padStart(2, '0');
+                const dateStr = `${year}/${month}/${day}`;
+
+                // Using henrygd NCAA API
+                const response = await fetch(`https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${dateStr}/all-conf`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
 
                 const data = await response.json();
-                games = data.events || [];
+                games = data.games || [];
 
                 if (games.length === 0) {
                     document.getElementById('content').innerHTML = `
                         <div class="error">
-                            <p>No games scheduled</p>
+                            <p>No games scheduled for today</p>
                         </div>
                     `;
                     return;
@@ -298,23 +305,18 @@
 
             let html = '';
             games.forEach((game, idx) => {
-                const competition = game.competitions[0];
-                const competitors = competition.competitors;
-                const away = competitors[0];
-                const home = competitors[1];
-                
-                const awayScore = away.score || 0;
-                const homeScore = home.score || 0;
+                const awayScore = game.away_score || 0;
+                const homeScore = game.home_score || 0;
                 const total = awayScore + homeScore;
                 
                 let status = 'Scheduled';
                 let statusClass = '';
 
-                const detail = game.status.detail.toLowerCase();
-                if (detail.includes('final')) {
+                const gameStatus = (game.status || '').toLowerCase();
+                if (gameStatus.includes('final')) {
                     status = 'Final';
                     statusClass = 'final';
-                } else if (detail.includes('progress') || detail.includes('live')) {
+                } else if (gameStatus.includes('progress') || gameStatus.includes('live')) {
                     status = '🔴 LIVE';
                     statusClass = 'live';
                 }
@@ -323,12 +325,12 @@
                     <div class="game" onclick="openGame(${idx})">
                         <div class="teams">
                             <div class="team">
-                                <div class="team-name">${away.team.displayName}</div>
+                                <div class="team-name">${game.away_display}</div>
                                 <div class="score">${awayScore}</div>
                             </div>
                             <div style="color: #999;">vs</div>
                             <div class="team">
-                                <div class="team-name">${home.team.displayName}</div>
+                                <div class="team-name">${game.home_display}</div>
                                 <div class="score">${homeScore}</div>
                             </div>
                         </div>
@@ -343,28 +345,23 @@
 
         function openGame(idx) {
             currentGame = games[idx];
-            const competition = currentGame.competitions[0];
-            const competitors = competition.competitors;
-            const away = competitors[0];
-            const home = competitors[1];
-            
-            const awayScore = away.score || 0;
-            const homeScore = home.score || 0;
+            const awayScore = currentGame.away_score || 0;
+            const homeScore = currentGame.home_score || 0;
             const total = awayScore + homeScore;
             const gameId = currentGame.id;
 
             document.getElementById('modalTitle').textContent = 
-                `${away.team.displayName} vs ${home.team.displayName}`;
+                `${currentGame.away_display} vs ${currentGame.home_display}`;
             
             document.getElementById('modalScores').innerHTML = `
                 <div class="teams">
                     <div class="team">
-                        <div class="team-name">${away.team.displayName}</div>
+                        <div class="team-name">${currentGame.away_display}</div>
                         <div class="score">${awayScore}</div>
                     </div>
                     <div style="color: #999;">vs</div>
                     <div class="team">
-                        <div class="team-name">${home.team.displayName}</div>
+                        <div class="team-name">${currentGame.home_display}</div>
                         <div class="score">${homeScore}</div>
                     </div>
                 </div>
@@ -396,12 +393,7 @@
             ouData[currentGame.id] = ou;
             document.getElementById('ouInput').value = '';
 
-            const competition = currentGame.competitions[0];
-            const competitors = competition.competitors;
-            const away = competitors[0];
-            const home = competitors[1];
-            const total = (away.score || 0) + (home.score || 0);
-            
+            const total = (currentGame.away_score || 0) + (currentGame.home_score || 0);
             const trend = total > ou ? 'OVER 📈' : 'UNDER 📉';
             const trendClass = total > ou ? 'over' : 'under';
             
