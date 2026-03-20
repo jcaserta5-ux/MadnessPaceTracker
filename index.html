@@ -184,11 +184,20 @@
             color: #ff4757;
         }
 
+        .banner {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
         .loading {
             text-align: center;
             color: white;
             padding: 40px;
-            font-size: 1.1em;
         }
 
         .spinner {
@@ -211,7 +220,7 @@
     <div class="container">
         <header>
             <h1>🏀 Madness Pace Tracker</h1>
-            <p style="color: white;">NCAA D1 Basketball - Live Data</p>
+            <p style="color: white;">NCAA D1 Basketball - LIVE</p>
         </header>
 
         <div id="content">
@@ -228,7 +237,7 @@
                 <div id="modalScores"></div>
                 <div class="total" id="modalTotal"></div>
                 <div class="ou-info">
-                    <label>Set O/U Line:</label><br>
+                    <label><strong>Set O/U Line:</strong></label><br>
                     <input type="number" id="ouInput" placeholder="Enter total" step="0.5">
                     <button onclick="setOU()">Set Line</button>
                     <div class="trend" id="trendDisplay"></div>
@@ -256,93 +265,30 @@
 
         async function fetchLiveGames() {
             try {
-                document.getElementById('content').innerHTML = `
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>Loading live games...</p>
-                    </div>
-                `;
-
-                // Using CORS proxy to bypass CORS restrictions
-                const corsProxy = 'https://cors-anywhere.herokuapp.com/';
-                const espnUrl = 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard';
+                // Fetch from ESPN API
+                const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard');
                 
-                const response = await fetch(corsProxy + espnUrl, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error('Failed to fetch');
                 }
 
                 const data = await response.json();
                 games = data.events || [];
 
                 if (games.length === 0) {
-                    document.getElementById('content').innerHTML = `
-                        <div style="text-align: center; color: white; padding: 40px;">
-                            <p style="font-size: 1.2em;">📅 No NCAA games scheduled for today</p>
-                            <p style="font-size: 0.9em; margin-top: 10px;">Check back during basketball season!</p>
-                        </div>
-                    `;
-                    return;
+                    throw new Error('No games found');
                 }
 
                 displayGames();
             } catch (error) {
                 console.error('Error:', error);
-                
-                // Fallback to sample data if API fails
-                loadSampleGames();
+                document.getElementById('content').innerHTML = `
+                    <div style="text-align: center; color: white; padding: 40px;">
+                        <p>Unable to load live games</p>
+                        <button onclick="location.reload()" style="margin-top: 20px;">Retry</button>
+                    </div>
+                `;
             }
-        }
-
-        function loadSampleGames() {
-            games = [
-                {
-                    id: '1',
-                    competitions: [{
-                        competitors: [
-                            { team: { displayName: 'Duke' }, score: 72 },
-                            { team: { displayName: 'UNC' }, score: 68 }
-                        ]
-                    }],
-                    status: { detail: 'In Progress' }
-                },
-                {
-                    id: '2',
-                    competitions: [{
-                        competitors: [
-                            { team: { displayName: 'Kansas' }, score: 55 },
-                            { team: { displayName: 'Texas' }, score: 58 }
-                        ]
-                    }],
-                    status: { detail: 'In Progress' }
-                },
-                {
-                    id: '3',
-                    competitions: [{
-                        competitors: [
-                            { team: { displayName: 'Kentucky' }, score: 45 },
-                            { team: { displayName: 'Auburn' }, score: 42 }
-                        ]
-                    }],
-                    status: { detail: 'In Progress' }
-                }
-            ];
-
-            document.getElementById('content').innerHTML = `
-                <div style="text-align: center; color: white; padding: 20px;">
-                    <p style="font-size: 1em; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px; margin-bottom: 20px;">
-                        📡 Showing sample games (live API temporarily unavailable)
-                    </p>
-                </div>
-            `;
-            
-            displayGames();
         }
 
         function displayGames() {
@@ -370,7 +316,7 @@
                     status = 'Final';
                     statusClass = 'final';
                 } else if (detail.includes('progress') || detail.includes('live')) {
-                    status = '🔴 Live';
+                    status = '🔴 LIVE';
                     statusClass = 'live';
                 }
 
@@ -465,9 +411,10 @@
             `;
         }
 
-        // Load games on page load
+        // Load games on page load and refresh every 10 seconds
         window.addEventListener('load', () => {
             fetchLiveGames();
+            setInterval(fetchLiveGames, 10000);
         });
     </script>
 </body>
