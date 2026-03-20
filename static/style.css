@@ -1,0 +1,41 @@
+/*
+ * Styles for displaying NCAA basketball games
+ */
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.header {
+    background: #007bff;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+}
+
+.game {
+    border: 1px solid #ccc;
+    background: white;
+    margin: 15px auto;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.team {
+    font-weight: bold;
+    display: inline-block;
+}
+
+.score {
+    float: right;
+    font-size: 1.5em;
+}
+
+.time {
+    font-size: 0.9em;
+    color: gray;
+    text-align: right;
+}
