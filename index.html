@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCAA Basketball Pace Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            fetchGames();
+        });
+
+        function fetchGames() {
+            const url = 'https://site.api.espn.com/apis/site/v2/sports/basketball/ncaa/scores';
+            $.get(url, function(data) {
+                const games = data.events;
+                let gameList = '';
+
+                games.forEach(game => {
+                    gameList += `<li>${game.name} - ${game.date} - ${game.status.summary}</li>`;
+                });
+
+                $('#game-list').html(gameList);
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>NCAA Basketball Pace Tracker</h1>
+    <ul id="game-list"></ul>
+</body>
+</html>
