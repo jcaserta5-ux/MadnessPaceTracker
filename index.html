@@ -263,9 +263,15 @@
                     </div>
                 `;
 
-                // Using ESPN API - no authentication required
-                const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard', {
-                    method: 'GET'
+                // Using CORS proxy to bypass CORS restrictions
+                const corsProxy = 'https://cors-anywhere.herokuapp.com/';
+                const espnUrl = 'https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard';
+                
+                const response = await fetch(corsProxy + espnUrl, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
                 });
 
                 if (!response.ok) {
@@ -288,14 +294,55 @@
                 displayGames();
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('content').innerHTML = `
-                    <div style="text-align: center; color: white; padding: 40px;">
-                        <p style="font-size: 1.1em;">⚠️ Error loading games</p>
-                        <p style="font-size: 0.9em; margin-top: 10px;">Retrying...</p>
-                        <button onclick="fetchLiveGames()" style="margin-top: 20px;">Try Again</button>
-                    </div>
-                `;
+                
+                // Fallback to sample data if API fails
+                loadSampleGames();
             }
+        }
+
+        function loadSampleGames() {
+            games = [
+                {
+                    id: '1',
+                    competitions: [{
+                        competitors: [
+                            { team: { displayName: 'Duke' }, score: 72 },
+                            { team: { displayName: 'UNC' }, score: 68 }
+                        ]
+                    }],
+                    status: { detail: 'In Progress' }
+                },
+                {
+                    id: '2',
+                    competitions: [{
+                        competitors: [
+                            { team: { displayName: 'Kansas' }, score: 55 },
+                            { team: { displayName: 'Texas' }, score: 58 }
+                        ]
+                    }],
+                    status: { detail: 'In Progress' }
+                },
+                {
+                    id: '3',
+                    competitions: [{
+                        competitors: [
+                            { team: { displayName: 'Kentucky' }, score: 45 },
+                            { team: { displayName: 'Auburn' }, score: 42 }
+                        ]
+                    }],
+                    status: { detail: 'In Progress' }
+                }
+            ];
+
+            document.getElementById('content').innerHTML = `
+                <div style="text-align: center; color: white; padding: 20px;">
+                    <p style="font-size: 1em; background: rgba(255,255,255,0.2); padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+                        📡 Showing sample games (live API temporarily unavailable)
+                    </p>
+                </div>
+            `;
+            
+            displayGames();
         }
 
         function displayGames() {
@@ -418,10 +465,9 @@
             `;
         }
 
-        // Load games on page load and refresh every 30 seconds
+        // Load games on page load
         window.addEventListener('load', () => {
             fetchLiveGames();
-            setInterval(fetchLiveGames, 30000);
         });
     </script>
 </body>
