@@ -29,12 +29,15 @@ async function loadScores() {
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const dd = String(now.getDate()).padStart(2, '0');
 
-    const url = `https://data.ncaa.com/casablanca/scoreboard/basketball-men/d1/${yyyy}/${mm}/${dd}/scoreboard.json`;
+    const ncaaUrl = `https://data.ncaa.com/casablanca/scoreboard/basketball-men/d1/${yyyy}/${mm}/${dd}/scoreboard.json`;
+
+    // Use a CORS proxy
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(ncaaUrl)}`;
 
     try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Bad response");
-        const data = await res.json();
+        const res = await fetch(proxyUrl);
+        const wrapped = await res.json();
+        const data = JSON.parse(wrapped.contents);
 
         const container = document.getElementById("scores");
         container.innerHTML = "";
@@ -73,7 +76,6 @@ async function loadScores() {
     }
 }
 
-// Load immediately + refresh every 30 seconds
 loadScores();
 setInterval(loadScores, 30000);
 </script>
