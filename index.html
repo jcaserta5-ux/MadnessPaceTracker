@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NCAA Scoreboard – Today</title>
+  <title>NCAA Tournament – Live Scoreboard</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -57,7 +57,7 @@
 </head>
 <body>
 
-  <h1>NCAA Division I – Today’s Games</h1>
+  <h1>NCAA Tournament – Today’s Games</h1>
   <div id="games"></div>
   <div id="error" class="error"></div>
 
@@ -73,6 +73,7 @@
     async function loadGames() {
       const datePath = formatDateForNCAA();
 
+      // Tournament scoreboard endpoint
       const NCAA_URL =
         `https://data.ncaa.com/casablanca/scoreboard/basketball-men/d1/${datePath}/scoreboard.json`;
 
@@ -88,13 +89,23 @@
         gamesDiv.innerHTML = "Loading…";
 
         const res = await fetch(PROXY, { cache: "no-store" });
+
+        // NCAA returns 404 on non-game days
+        if (res.status === 404) {
+          gamesDiv.innerHTML = "<p>No games scheduled today.</p>";
+          return;
+        }
+
         if (!res.ok) throw new Error("HTTP " + res.status);
 
         const data = await res.json();
-        const games = data.games || [];
+
+        // FIX: NCAA tournament JSON wraps each game inside { game: {...} }
+        const rawGames = data.games || [];
+        const games = rawGames.map(g => g.game);
 
         if (games.length === 0) {
-          gamesDiv.innerHTML = "<p>No games today.</p>";
+          gamesDiv.innerHTML = "<p>No games scheduled today.</p>";
           return;
         }
 
@@ -109,18 +120,20 @@
 
           div.innerHTML = `
             <div class="teams">
-              <div class="team-name">${away.names?.short || away.team || "Away"}</div>
+              <div class="team-name">${away.names?.short || "Away"}</div>
               <div class="team-score">${away.score ?? "0"}</div>
 
-              <div class="team-name">${home.names?.short || home.team || "Home"}</div>
+              <div class="team-name">${home.names?.short || "Home"}</div>
               <div class="team-score">${home.score ?? "0"}</div>
             </div>
 
             <div class="meta">
-              Status: ${g.gameState || g.status || "TBD"}<br>
-              Clock: ${g.gameClock || "—"}<br>
+              Status: ${g.gameState || "TBD"}<br>
+              Clock: ${g.contestClock || "—"}<br>
               Period: ${g.currentPeriod || "—"}<br>
-              Venue: ${g.venue || "TBD"}
+              Network: ${g.network || "—"}<br>
+              Round: ${g.bracketRound || "—"}<br>
+              Start Time: ${g.startTime || "—"}
             </div>
           `;
 
